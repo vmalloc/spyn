@@ -58,7 +58,7 @@ pub(crate) fn parse(rdr: impl std::io::Read) -> std::io::Result<Requirements> {
     Ok(Requirements { reqs })
 }
 
-fn parse_line_req(line: &str) -> Option<impl Iterator<Item = &str>> {
+fn parse_line_req(line: &str) -> Option<HashSet<&str>> {
     let mut modules = HashSet::new();
 
     let (code, comment) = line.split_once('#')?;
@@ -79,20 +79,24 @@ fn parse_line_req(line: &str) -> Option<impl Iterator<Item = &str>> {
         }
     }
 
-    Some(modules.into_iter())
+    Some(modules)
 }
 
 #[test]
 fn test_parse_line_req() {
-    fn parse(line: &str) -> Vec<&str> {
-        parse_line_req(line).into_iter().flatten().collect()
+    use literally::hset;
+    fn parse(line: &str) -> HashSet<&str> {
+        parse_line_req(line).unwrap_or_default()
     }
 
     assert!(parse("import x").is_empty());
-    assert_eq!(parse("import x # fades"), ["x"]);
-    assert_eq!(parse("import x # spyn"), ["x"]);
-    assert_eq!(parse("import x as y # spyn"), ["x"]);
-    assert_eq!(parse("import x as y, z as b # spyn"), ["x", "z"]);
-    assert_eq!(parse("from a import x as y, z as b # spyn"), ["a"]);
-    assert_eq!(parse("from a import x as y, z as b #    fades"), ["a"]);
+    assert_eq!(parse("import x # fades"), hset! {"x"});
+    assert_eq!(parse("import x # spyn"), hset! {"x"});
+    assert_eq!(parse("import x as y # spyn"), hset! {"x"});
+    assert_eq!(parse("import x as y, z as b # spyn"), hset! {"x", "z"});
+    assert_eq!(parse("from a import x as y, z as b # spyn"), hset! {"a"});
+    assert_eq!(
+        parse("from a import x as y, z as b #    fades"),
+        hset! {"a"}
+    );
 }
