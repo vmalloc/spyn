@@ -44,11 +44,12 @@ fn assemble_requirements(opts: &Opts) -> anyhow::Result<Requirements> {
 #[tracing::instrument(skip(opts))]
 fn prepare_venv(opts: &Opts) -> anyhow::Result<venv::Venv> {
     let _timer = crate::utils::Timer::new("prepare");
-    let reqs = assemble_requirements(opts)?;
+    let reqs = assemble_requirements(opts).context("Failed assembling requirements")?;
 
     let hash = reqs.hash();
 
-    let root = homedir::get_my_home()?
+    let root = homedir::get_my_home()
+        .context("Failed getting home directory")?
         .ok_or_else(|| anyhow::format_err!("Failed locating home directory"))?
         .join(".spyn");
 
@@ -58,7 +59,9 @@ fn prepare_venv(opts: &Opts) -> anyhow::Result<venv::Venv> {
         if let Some(parent) = venv_path.parent() {
             std::fs::create_dir_all(parent).context("Failed creating directory")?;
         }
-        returned.prepare(reqs)?;
+        returned
+            .prepare(reqs)
+            .context("Failed creating virtual environment")?;
     } else {
         tracing::debug!(?venv_path, "Using existing virtualenv dir");
     }
@@ -72,7 +75,7 @@ fn main() -> anyhow::Result<()> {
 
     let opts = Opts::parse();
 
-    let venv = prepare_venv(&opts)?;
+    let venv = prepare_venv(&opts).context("Failed preparing virtual environment")?;
 
     let mut cmd = std::process::Command::new(venv.path().join(format!(
         "bin/{}",

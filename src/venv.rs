@@ -20,12 +20,18 @@ impl Venv {
     }
 
     pub(crate) fn prepare(&self, reqs: crate::reqs::Requirements) -> anyhow::Result<()> {
-        run_shell(std::process::Command::new("uv").arg("venv").arg(&self.path))
-            .context("Failed creating virtualenv via `uv`")?;
+        let uv_path = which::which("uv").context("Failed locating uv executable")?;
+        tracing::debug!(?uv_path);
+        run_shell(
+            std::process::Command::new(&uv_path)
+                .arg("venv")
+                .arg(&self.path),
+        )
+        .context("Failed creating virtualenv via `uv`")?;
 
         if let Some(reqfile) = reqs.write_in(&self.path)? {
             run_shell(
-                std::process::Command::new("uv")
+                std::process::Command::new(&uv_path)
                     .current_dir(&self.path)
                     .env("VIRTUAL_ENV", &self.path)
                     .arg("pip")
