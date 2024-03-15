@@ -19,7 +19,9 @@ class Spyn:
             cmd += f.name
         for dep in deps:
             cmd += f" -d {dep}"
-        return subprocess.check_output(cmd, shell=True, cwd="/tmp", encoding="utf-8")
+        return subprocess.check_output(
+            cmd, shell=True, cwd="/tmp", encoding="utf-8", env={"RUST_LOG": "DEBUG"}
+        )
 
 
 PROJ_ROOT = pathlib.Path(__file__).parent.parent.absolute()
