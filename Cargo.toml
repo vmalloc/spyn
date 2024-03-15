@@ -1,6 +1,10 @@
 [package]
+description = "A tool for creating on-demand Python virtual environments"
 edition = "2021"
+homepage = "https://github.com/vmalloc/spyn"
+license = "MIT"
 name = "spyn"
+repository = "https://github.com/vmalloc/spyn"
 version = "0.2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
