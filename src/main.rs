@@ -11,6 +11,7 @@ mod venv;
 use clap::Parser;
 
 #[derive(Parser)]
+#[command(version, about, long_about = None)]
 struct Opts {
     #[clap(long = "dep", short = 'd')]
     deps: Vec<smol_str::SmolStr>,
