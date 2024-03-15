@@ -48,6 +48,9 @@ jobs:
       - name: Install uv
         run: pip install uv
 
+      - name: Make sure uv is installed
+        run: echo $PATH
+
       - name: Run tests
         run: pytest tests -s -vvv -n 4
         timeout-minutes: 10
