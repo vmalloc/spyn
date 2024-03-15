@@ -1,5 +1,6 @@
+use anyhow::Context;
 use reqs::Requirements;
-use std::{os::unix::process::CommandExt, time::Instant};
+use std::os::unix::process::CommandExt;
 
 mod reqs;
 mod utils;
@@ -10,54 +11,65 @@ use clap::Parser;
 #[derive(Parser)]
 struct Opts {
     #[clap(long = "dep", short = 'd')]
-    deps: Vec<String>,
+    deps: Vec<smol_str::SmolStr>,
 
     #[clap(long)]
     ipython: bool,
 
-    cmd: Vec<String>,
+    cmd: Vec<smol_str::SmolStr>,
 }
 
+#[tracing::instrument(skip(opts))]
 fn assemble_requirements(opts: &Opts) -> anyhow::Result<Requirements> {
-    let start = Instant::now();
+    let _timer = crate::utils::Timer::new("assemble");
 
     let mut reqs = Requirements::new();
 
     for dep in opts.deps.iter() {
-        reqs.add(dep);
+        reqs.add(dep.as_ref());
     }
     if opts.ipython {
         reqs.add("ipython");
     }
 
     if let Some(filename) = opts.cmd.first() {
-        if let Ok(file) = std::fs::File::open(filename) {
+        if let Ok(file) = std::fs::File::open(filename.as_str()) {
             reqs.parse_and_append(file)?;
         }
     }
 
-    tracing::debug!(
-        duration = ?std::time::Instant::now().duration_since(start),
-    );
     Ok(reqs)
 }
 
+#[tracing::instrument(skip(opts))]
 fn prepare_venv(opts: &Opts) -> anyhow::Result<venv::Venv> {
+    let _timer = crate::utils::Timer::new("prepare");
     let reqs = assemble_requirements(opts)?;
 
-    let path = tempdir::TempDir::new("spyn")?;
+    let hash = reqs.hash();
 
-    let returned = crate::venv::Venv::new(path.path());
-    returned.prepare(reqs)?;
+    let root = homedir::get_my_home()?
+        .ok_or_else(|| anyhow::format_err!("Failed locating home directory"))?
+        .join(".spyn");
 
-    let _ = path.into_path();
-
+    let venv_path = root.join(hash);
+    let returned = crate::venv::Venv::new(&venv_path);
+    if !venv_path.exists() {
+        if let Some(parent) = venv_path.parent() {
+            std::fs::create_dir_all(parent).context("Failed creating directory")?;
+        }
+        returned.prepare(reqs)?;
+    } else {
+        tracing::debug!(?venv_path, "Using existing virtualenv dir");
+    }
+    tracing::debug!("Virtualenv preparation complete");
     Ok(returned)
 }
 
 fn main() -> anyhow::Result<()> {
+    let timer = crate::utils::Timer::new("main");
     tracing_subscriber::fmt::init();
-    let start = std::time::Instant::now();
+
     let opts = Opts::parse();
 
     let venv = prepare_venv(&opts)?;
@@ -68,12 +80,8 @@ fn main() -> anyhow::Result<()> {
     )));
 
     for arg in opts.cmd {
-        cmd.arg(arg);
+        cmd.arg(arg.as_str());
     }
-
-    tracing::debug!(
-        "Virtual environment created in {:?}",
-        std::time::Instant::now().duration_since(start)
-    );
+    drop(timer);
     Err(cmd.exec().into())
 }

@@ -5,7 +5,7 @@ import pytest
 def test_run_marker(spyn, marker):
     assert (
         spyn.run_file(
-            contents=f"""
+            code=f"""
 import requests   # {marker}          
 print('success')
 """
@@ -17,7 +17,7 @@ print('success')
 def test_run_dep(spyn):
     assert (
         spyn.run_file(
-            contents="""
+            code="""
 import requests
 print('success')
 """,

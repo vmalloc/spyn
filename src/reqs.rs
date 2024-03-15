@@ -1,3 +1,5 @@
+use sha3::Digest;
+use smol_str::SmolStr;
 use std::collections::HashSet;
 use std::io::BufReader;
 use std::io::{BufRead, Write};
@@ -5,7 +7,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 pub(crate) struct Requirements {
-    reqs: HashSet<String>,
+    reqs: HashSet<SmolStr>,
 }
 
 impl Requirements {
@@ -15,7 +17,7 @@ impl Requirements {
         }
     }
 
-    pub(crate) fn add(&mut self, req: impl Into<String>) {
+    pub(crate) fn add(&mut self, req: impl Into<SmolStr>) {
         self.reqs.insert(req.into());
     }
 
@@ -45,6 +47,22 @@ impl Requirements {
             Ok(Some(path))
         }
     }
+
+    #[tracing::instrument(skip(self))]
+    pub(crate) fn hash(&self) -> String {
+        let start = std::time::Instant::now();
+        let mut hasher = sha3::Sha3_224::new();
+
+        let mut deps = self.reqs.iter().collect::<Vec<_>>();
+        deps.sort();
+        for dep in deps {
+            hasher.update(dep.as_bytes());
+        }
+
+        let returned = hex::encode(hasher.finalize());
+        tracing::debug!(total_time = ?std::time::Instant::now().duration_since(start));
+        returned
+    }
 }
 
 pub(crate) fn parse(rdr: impl std::io::Read) -> std::io::Result<Requirements> {
@@ -52,7 +70,7 @@ pub(crate) fn parse(rdr: impl std::io::Read) -> std::io::Result<Requirements> {
     for line in BufReader::new(rdr).lines() {
         let line = line?;
         for dep in parse_line_req(&line).into_iter().flatten() {
-            reqs.insert(dep.to_owned());
+            reqs.insert(dep.into());
         }
     }
     Ok(Requirements { reqs })

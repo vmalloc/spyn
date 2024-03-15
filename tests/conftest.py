@@ -8,14 +8,14 @@ class Spyn:
     def __init__(self, binary_path):
         self.binary = binary_path
 
-    def run_file(self, *, path=None, contents=None, deps=()):
+    def run_file(self, *, path=None, code=None, deps=()):
         cmd = f"{self.binary} "
-        assert (path is not None) ^ (contents is not None)
+        assert (path is not None) ^ (code is not None)
         if path is not None:
             cmd += path
-        elif contents is not None:
+        elif code is not None:
             with open(tempfile.mktemp(), "w", encoding="utf-8") as f:
-                f.write(contents)
+                f.write(code)
             cmd += f.name
         for dep in deps:
             cmd += f" -d {dep}"
