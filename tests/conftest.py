@@ -1,7 +1,13 @@
-import pytest
-import tempfile
+import os
 import pathlib
 import subprocess
+import tempfile
+
+import pytest
+
+
+class SpynError(Exception):
+    pass
 
 
 class Spyn:
@@ -19,9 +25,16 @@ class Spyn:
             cmd += f.name
         for dep in deps:
             cmd += f" -d {dep}"
-        return subprocess.check_output(
-            cmd, shell=True, cwd="/tmp", encoding="utf-8", env={"RUST_LOG": "DEBUG"}
-        )
+        try:
+            return subprocess.check_output(
+                cmd,
+                shell=True,
+                cwd="/tmp",
+                encoding="utf-8",
+                env={"RUST_LOG": "DEBUG", **os.environ},
+            )
+        except subprocess.CalledProcessError as e:
+            raise SpynError(f"command {cmd} failed: {e.output}")
 
 
 PROJ_ROOT = pathlib.Path(__file__).parent.parent.absolute()

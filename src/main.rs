@@ -1,6 +1,8 @@
 use anyhow::Context;
 use reqs::Requirements;
 use std::os::unix::process::CommandExt;
+use tracing::instrument;
+use tracing_subscriber::util::SubscriberInitExt;
 
 mod reqs;
 mod utils;
@@ -69,9 +71,20 @@ fn prepare_venv(opts: &Opts) -> anyhow::Result<venv::Venv> {
     Ok(returned)
 }
 
+#[instrument]
+fn init_logging() {
+    let _timer = crate::utils::Timer::new("init-logging");
+    tracing_subscriber::fmt::Subscriber::builder()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_writer(std::io::stderr)
+        .finish()
+        .try_init()
+        .unwrap();
+}
+
 fn main() -> anyhow::Result<()> {
     let timer = crate::utils::Timer::new("main");
-    tracing_subscriber::fmt::init();
+    init_logging();
 
     let opts = Opts::parse();
 

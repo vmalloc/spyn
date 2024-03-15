@@ -49,7 +49,7 @@ jobs:
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Run tests
-        run: pytest tests -s -vvv -n 4
+        run: pytest tests -s -vvv
         timeout-minutes: 10
 
       - name: Publish (dry run)
