@@ -19,6 +19,9 @@ struct Opts {
     #[clap(long)]
     ipython: bool,
 
+    #[clap(short = 'p', long)]
+    python: Option<String>,
+
     cmd: Vec<smol_str::SmolStr>,
 }
 
@@ -49,7 +52,7 @@ fn prepare_venv(opts: &Opts) -> anyhow::Result<venv::Venv> {
     let _timer = crate::utils::Timer::new("prepare");
     let reqs = assemble_requirements(opts).context("Failed assembling requirements")?;
 
-    let hash = reqs.hash();
+    let hash = reqs.hash(opts.python.as_deref());
 
     let root = homedir::get_my_home()
         .context("Failed getting home directory")?
@@ -57,7 +60,7 @@ fn prepare_venv(opts: &Opts) -> anyhow::Result<venv::Venv> {
         .join(".spyn");
 
     let venv_path = root.join(hash);
-    let returned = crate::venv::Venv::new(&venv_path);
+    let returned = crate::venv::Venv::new(&venv_path, opts.python.as_ref());
     if !venv_path.exists() {
         if let Some(parent) = venv_path.parent() {
             std::fs::create_dir_all(parent).context("Failed creating directory")?;

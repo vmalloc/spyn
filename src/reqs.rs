@@ -49,9 +49,14 @@ impl Requirements {
     }
 
     #[tracing::instrument(skip(self))]
-    pub(crate) fn hash(&self) -> String {
+    pub(crate) fn hash(&self, python: Option<&str>) -> String {
         let start = std::time::Instant::now();
         let mut hasher = sha3::Sha3_224::new();
+
+        if let Some(python) = python {
+            hasher.update("py:");
+            hasher.update(python);
+        }
 
         let mut deps = self.reqs.iter().collect::<Vec<_>>();
         deps.sort();
