@@ -20,7 +20,8 @@ impl Venv {
     }
 
     pub(crate) fn prepare(&self, reqs: crate::reqs::Requirements) -> anyhow::Result<()> {
-        let uv_path = which::which("uv").context("Failed locating uv executable")?;
+        let uv_path = which::which("uv")
+            .context("Failed locating uv executable. Do you have uv installed?")?;
         tracing::debug!(?uv_path);
         run_shell(
             std::process::Command::new(&uv_path)

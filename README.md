@@ -7,6 +7,15 @@ Spyn was heavily inspired by [fades](https://fades.readthedocs.io/en/latest/inde
 2. Spyn uses `uv` for creating and managing virtual environments. This allows it to create virtuelenvs in fractions of seconds and be less prone to `pip` breakages and hiccups.
 
 # Installation
+
+`spyn` needs `uv` in order to operate correctly. Make sure you install it as described in the [official docs](https://github.com/astral-sh/uv).
+
+The most convenient way is to use `homebrew` if you're on macOS, or run the following command:
+
+```
+$ curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
 You can use `cargo install` to install `spyn`:
 
 ```
