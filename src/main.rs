@@ -13,18 +13,23 @@ use clap::Parser;
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 pub(crate) struct Opts {
+    /// Dependency to add to the new environment
     #[clap(long = "dep", short = 'd')]
     deps: Vec<smol_str::SmolStr>,
 
+    /// Run in offline mode (i.e. avoid accessing the network)
     #[clap(long)]
     pub(crate) offline: bool,
 
+    /// Launches IPython in the new environment
     #[clap(long)]
     ipython: bool,
 
+    /// Launch Jupyter notebooks in the newly created environment
     #[clap(long)]
     notebook: bool,
 
+    /// Specifies the version of Python to be used (accepts version numbers as well as full paths)
     #[clap(short = 'p', long)]
     python: Option<String>,
 
