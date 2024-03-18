@@ -114,19 +114,12 @@ fn main() -> anyhow::Result<()> {
 
     let venv = prepare_venv(&opts).context("Failed preparing virtual environment")?;
 
-    let mut cmd = std::process::Command::new(venv.path().join(format!(
-        "bin/{}",
-        if opts.ipython {
-            "ipython"
-        } else if opts.notebook {
-            "jupyter"
-        } else {
-            "python"
-        }
-    )));
+    let mut cmd = std::process::Command::new(venv.path().join("bin/python"));
 
-    if opts.notebook {
-        cmd.arg("--notebook");
+    if opts.ipython {
+        cmd.args(["-m", "Ipython"]);
+    } else if opts.notebook {
+        cmd.args(["-m", "jupyter", "notebook"]);
     }
 
     for arg in opts.cmd {
