@@ -102,6 +102,11 @@ fn main() -> anyhow::Result<()> {
     let timer = crate::utils::Timer::new("main");
     init_logging();
 
+    ctrlc::set_handler(move || {
+        tracing::debug!("Interrupted");
+    })
+    .context("Error setting up signal handler")?;
+
     let opts = Opts::parse();
 
     let venv = prepare_venv(&opts).context("Failed preparing virtual environment")?;
