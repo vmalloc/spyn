@@ -21,7 +21,11 @@ impl Venv {
         &self.path
     }
 
-    pub(crate) fn prepare(&self, reqs: crate::reqs::Requirements) -> anyhow::Result<()> {
+    pub(crate) fn prepare(
+        &self,
+        temp_dir: tempfile::TempDir,
+        reqs: crate::reqs::Requirements,
+    ) -> anyhow::Result<()> {
         let uv_path = which::which("uv")
             .context("Failed locating uv executable. Do you have uv installed?")?;
         tracing::debug!(?uv_path);
@@ -30,21 +34,27 @@ impl Venv {
         if let Some(p) = &self.python {
             cmd.arg("--python").arg(p);
         }
-        cmd.arg(&self.path);
+        cmd.arg(temp_dir.path());
         run_shell(&mut cmd).context("Failed creating virtualenv via `uv`")?;
 
-        if let Some(reqfile) = reqs.write_in(&self.path)? {
+        if let Some(reqfile) = reqs.write_in(&temp_dir.path())? {
             run_shell(
                 std::process::Command::new(&uv_path)
-                    .current_dir(&self.path)
-                    .env("VIRTUAL_ENV", &self.path)
+                    .current_dir(temp_dir.path())
+                    .env("VIRTUAL_ENV", temp_dir.path())
                     .arg("pip")
                     .arg("install")
                     .arg("-r")
                     .arg(reqfile), //.arg(req_file.to_string_lossy()),
             )
-            .context("Failed running installation in venv")?;
+            .with_context(|| {
+                format!("Failed running installation in venv {:?}", &temp_dir.path())
+            })?;
         }
+        let temp_path = temp_dir.into_path();
+        tracing::debug!(from=?temp_path, to=?self.path, "Moving virtualenv");
+        std::fs::rename(&temp_path, &self.path)
+            .context("Failed moving virtualenv to its final location")?;
         Ok(())
     }
 }

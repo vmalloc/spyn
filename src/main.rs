@@ -19,6 +19,9 @@ struct Opts {
     #[clap(long)]
     ipython: bool,
 
+    #[clap(long)]
+    notebook: bool,
+
     #[clap(short = 'p', long)]
     python: Option<String>,
 
@@ -36,6 +39,10 @@ fn assemble_requirements(opts: &Opts) -> anyhow::Result<Requirements> {
     }
     if opts.ipython {
         reqs.add("ipython");
+    }
+
+    if opts.notebook {
+        reqs.add("jupyter");
     }
 
     if let Some(filename) = opts.cmd.first() {
@@ -61,12 +68,17 @@ fn prepare_venv(opts: &Opts) -> anyhow::Result<venv::Venv> {
 
     let venv_path = root.join(hash);
     let returned = crate::venv::Venv::new(&venv_path, opts.python.as_ref());
+
     if !venv_path.exists() {
-        if let Some(parent) = venv_path.parent() {
-            std::fs::create_dir_all(parent).context("Failed creating directory")?;
+        let temp_root = root.join("tmp");
+        if !temp_root.exists() {
+            std::fs::create_dir_all(temp_root).context("Failed creating .spyn directory")?;
         }
+
+        let temp_dir = tempfile::tempdir_in(root.join("tmp"))
+            .context("Failed creating temporary directory")?;
         returned
-            .prepare(reqs)
+            .prepare(temp_dir, reqs)
             .context("Failed creating virtual environment")?;
     } else {
         tracing::debug!(?venv_path, "Using existing virtualenv dir");
@@ -96,12 +108,22 @@ fn main() -> anyhow::Result<()> {
 
     let mut cmd = std::process::Command::new(venv.path().join(format!(
         "bin/{}",
-        if opts.ipython { "ipython" } else { "python" }
+        if opts.ipython {
+            "ipython"
+        } else if opts.notebook {
+            "jupyter"
+        } else {
+            "python"
+        }
     )));
+
+    if opts.notebook {
+        cmd.arg("--notebook");
+    }
 
     for arg in opts.cmd {
         cmd.arg(arg.as_str());
     }
     drop(timer);
-    Err(cmd.exec().into())
+    Err(cmd.exec()).with_context(|| format!("Failed running process {cmd:?}"))
 }

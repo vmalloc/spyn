@@ -19,6 +19,7 @@ smol_str = "0.2.1"
 tracing = "0.1.40"
 which = "6"
 tracing-subscriber = {version = "0.3.18", features = ["fmt", "env-filter"]}
+tempfile = "3.10.1"
 
 [dev-dependencies]
 literally = "0.1.3"

@@ -1,4 +1,6 @@
 import sys
+import pytest
+import subprocess
 
 _GET_INTERPRETER = """
 import sys
