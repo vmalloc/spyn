@@ -23,6 +23,7 @@ impl Venv {
 
     pub(crate) fn prepare(
         &self,
+        opts: &crate::Opts,
         temp_dir: tempfile::TempDir,
         reqs: crate::reqs::Requirements,
     ) -> anyhow::Result<()> {
@@ -31,6 +32,9 @@ impl Venv {
         tracing::debug!(?uv_path);
         let mut cmd = std::process::Command::new(&uv_path);
         cmd.arg("venv");
+        if opts.offline {
+            cmd.arg("--offline");
+        }
         if let Some(p) = &self.python {
             cmd.arg("--python").arg(p);
         }
@@ -38,14 +42,18 @@ impl Venv {
         run_shell(&mut cmd).context("Failed creating virtualenv via `uv`")?;
 
         if let Some(reqfile) = reqs.write_in(&temp_dir.path())? {
+            let mut cmd = std::process::Command::new(&uv_path);
+            cmd.current_dir(temp_dir.path())
+                .env("VIRTUAL_ENV", temp_dir.path())
+                .arg("pip")
+                .arg("install");
+            if opts.offline {
+                cmd.arg("--offline");
+            }
+            cmd.arg("-r");
+            cmd.arg(reqfile);
             run_shell(
-                std::process::Command::new(&uv_path)
-                    .current_dir(temp_dir.path())
-                    .env("VIRTUAL_ENV", temp_dir.path())
-                    .arg("pip")
-                    .arg("install")
-                    .arg("-r")
-                    .arg(reqfile), //.arg(req_file.to_string_lossy()),
+                &mut cmd, //.arg(req_file.to_string_lossy()),
             )
             .with_context(|| {
                 format!("Failed running installation in venv {:?}", &temp_dir.path())

@@ -12,9 +12,12 @@ use clap::Parser;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
-struct Opts {
+pub(crate) struct Opts {
     #[clap(long = "dep", short = 'd')]
     deps: Vec<smol_str::SmolStr>,
+
+    #[clap(long)]
+    pub(crate) offline: bool,
 
     #[clap(long)]
     ipython: bool,
@@ -78,7 +81,7 @@ fn prepare_venv(opts: &Opts) -> anyhow::Result<venv::Venv> {
         let temp_dir = tempfile::tempdir_in(root.join("tmp"))
             .context("Failed creating temporary directory")?;
         returned
-            .prepare(temp_dir, reqs)
+            .prepare(opts, temp_dir, reqs)
             .context("Failed creating virtual environment")?;
     } else {
         tracing::debug!(?venv_path, "Using existing virtualenv dir");
