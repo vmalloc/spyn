@@ -4,7 +4,7 @@ Spyn is a tool for creating on-demand, ad-hoc virtual environments for running P
 
 Spyn was heavily inspired by [fades](https://fades.readthedocs.io/en/latest/index.html), but tries to improve upon the same concept:
 1. Spyn is written in Rust and comes as a binary executable, meaning you don't need to install it through script wrappers or taint your local Python installation. It will also not break when system Python versions get upgraded or reinstalled. Spyn also runs much quicker thanks to that fact
-2. Spyn uses `uv` for creating and managing virtual environments. This allows it to create virtuelenvs in fractions of seconds and be less prone to `pip` breakages and hiccups.
+2. Spyn uses `uv` for creating and managing virtual environments. This allows it to create virtuelenvs in fractions of seconds and be less prone to `pip` breakages and hiccups. It also supports running in offline mode, meaning it only uses its cache and avoids accessing the network thanks to `uv`.
 
 # Installation
 
