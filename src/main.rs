@@ -51,6 +51,7 @@ fn assemble_requirements(opts: &Opts) -> anyhow::Result<Requirements> {
 
     if opts.notebook {
         reqs.add("jupyter");
+        reqs.add("notebook");
     }
 
     if let Some(filename) = opts.cmd.first() {
@@ -83,11 +84,13 @@ fn prepare_venv(opts: &Opts) -> anyhow::Result<venv::Venv> {
             std::fs::create_dir_all(temp_root).context("Failed creating .spyn directory")?;
         }
 
-        let temp_dir = tempfile::tempdir_in(root.join("tmp"))
-            .context("Failed creating temporary directory")?;
-        returned
-            .prepare(opts, temp_dir, reqs)
-            .context("Failed creating virtual environment")?;
+        if let Err(e) = returned.prepare(opts, reqs) {
+            tracing::error!("Error preparing virtualenv: {e:?}");
+            if let Err(e) = returned.purge() {
+                tracing::warn!("Failed removing virtualenv directory: {e:?}");
+            }
+            return Err(e);
+        }
     } else {
         tracing::debug!(?venv_path, "Using existing virtualenv dir");
     }
@@ -124,12 +127,20 @@ fn main() -> anyhow::Result<()> {
     if opts.ipython {
         cmd.args(["-m", "Ipython"]);
     } else if opts.notebook {
+        // Jupyter requires PATH to point at the virtual environment in order to function properly
+        let mut path = venv.path().join("bin").to_string_lossy().to_string();
+        if let Ok(existing_path) = std::env::var("PATH") {
+            path.push(':');
+            path.push_str(&existing_path);
+        }
+        cmd.env("PATH", path);
         cmd.args(["-m", "jupyter", "notebook"]);
     }
 
     for arg in opts.cmd {
         cmd.arg(arg.as_str());
     }
+    tracing::debug!(?cmd, "Running");
     drop(timer);
     Err(cmd.exec()).with_context(|| format!("Failed running process {cmd:?}"))
 }
