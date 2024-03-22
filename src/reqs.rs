@@ -99,10 +99,7 @@ fn parse_line_req(line: &str) -> Option<HashSet<&str>> {
 
     if code.starts_with("from") {
         // from import
-        let Some(module_name) = code.split_whitespace().nth(1) else {
-            return None;
-        };
-        modules.insert(module_name);
+        modules.insert(code.split_whitespace().nth(1)?);
     } else if let Some(import_str) = code.strip_prefix("import") {
         for import_substr in import_str.split(',') {
             modules.insert(import_substr.split_whitespace().next().unwrap());
