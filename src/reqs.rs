@@ -17,6 +17,14 @@ impl Requirements {
         }
     }
 
+    pub(crate) fn extend<T, A>(&mut self, items: T)
+    where
+        T: IntoIterator<Item = A>,
+        HashSet<SmolStr>: Extend<A>,
+    {
+        self.reqs.extend(items);
+    }
+
     pub(crate) fn add(&mut self, req: impl Into<SmolStr>) {
         self.reqs.insert(req.into());
     }
@@ -35,7 +43,6 @@ impl Requirements {
             let path = path.join("requirements.txt");
 
             let mut f = std::fs::OpenOptions::new()
-                .create(true)
                 .create_new(true)
                 .write(true)
                 .open(&path)?;

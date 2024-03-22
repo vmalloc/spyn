@@ -1,6 +1,11 @@
 use anyhow::Context;
+use itertools::Itertools;
 use reqs::Requirements;
-use std::os::unix::process::CommandExt;
+use smol_str::SmolStr;
+use std::{
+    io::{BufRead, BufReader},
+    os::unix::process::CommandExt,
+};
 use tracing::instrument;
 use tracing_subscriber::util::SubscriberInitExt;
 
@@ -16,6 +21,9 @@ pub(crate) struct Opts {
     /// Dependency to add to the new environment
     #[clap(long = "dep", short = 'd')]
     deps: Vec<smol_str::SmolStr>,
+
+    #[clap(long = "requirements-file", short = 'r')]
+    req_files: Vec<smol_str::SmolStr>,
 
     /// Run in offline mode (i.e. avoid accessing the network)
     #[clap(long)]
@@ -58,6 +66,15 @@ fn assemble_requirements(opts: &Opts) -> anyhow::Result<Requirements> {
         if let Ok(file) = std::fs::File::open(filename.as_str()) {
             reqs.parse_and_append(file)?;
         }
+    }
+
+    for reqfile in opts.req_files.iter() {
+        reqs.extend(
+            BufReader::new(std::fs::File::open(reqfile.as_str())?)
+                .lines()
+                .map_ok(SmolStr::from)
+                .collect::<Result<Vec<_>, _>>()?,
+        );
     }
 
     Ok(reqs)

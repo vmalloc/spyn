@@ -25,3 +25,19 @@ print('success')
         )
         == "success\n"
     )
+
+
+def test_req_file(spyn, tmpdir):
+    with (tmpdir / "reqfile.txt").open("w") as f:
+        print("requests", file=f)
+
+    assert (
+        spyn.run_file(
+            code="""
+import requests
+print('success')
+""",
+            args=["-r", f.name],
+        )
+        == "success\n"
+    )

@@ -14,7 +14,7 @@ class Spyn:
     def __init__(self, binary_path):
         self.binary = binary_path
 
-    def run_file(self, *, path=None, code=None, deps=(), python=None):
+    def run_file(self, *, path=None, code=None, deps=(), python=None, args=()):
         cmd = f"{self.binary} "
         assert (path is not None) ^ (code is not None)
         if path is not None:
@@ -27,6 +27,8 @@ class Spyn:
             cmd += f" -d {dep}"
         if python is not None:
             cmd += f" --python {python}"
+        for arg in args:
+            cmd += f" {arg}"
         try:
             return subprocess.check_output(
                 cmd,
