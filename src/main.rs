@@ -30,7 +30,7 @@ pub(crate) struct Opts {
     pub(crate) offline: bool,
 
     /// Launches IPython in the new environment
-    #[clap(long)]
+    #[clap(long, short = 'i')]
     ipython: bool,
 
     /// Launch Jupyter notebooks in the newly created environment
