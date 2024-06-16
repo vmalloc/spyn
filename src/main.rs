@@ -142,7 +142,7 @@ fn main() -> anyhow::Result<()> {
     let mut cmd = std::process::Command::new(venv.path().join("bin/python"));
 
     if opts.ipython {
-        cmd.args(["-m", "Ipython"]);
+        cmd.args(["-m", "IPython"]);
     } else if opts.notebook {
         // Jupyter requires PATH to point at the virtual environment in order to function properly
         let mut path = venv.path().join("bin").to_string_lossy().to_string();
