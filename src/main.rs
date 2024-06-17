@@ -30,7 +30,7 @@ pub(crate) struct Opts {
     pub(crate) offline: bool,
 
     /// Launches IPython in the new environment
-    #[clap(long)]
+    #[clap(long, short = 'i')]
     ipython: bool,
 
     /// Launch Jupyter notebooks in the newly created environment
@@ -40,6 +40,10 @@ pub(crate) struct Opts {
     /// Specifies the version of Python to be used (accepts version numbers as well as full paths)
     #[clap(short = 'p', long)]
     python: Option<String>,
+
+    /// Executes the child-program in the newly created environment
+    #[clap(short = 'x', long = "exec", conflicts_with = "ipython")]
+    exec_cmd: Option<String>,
 
     cmd: Vec<smol_str::SmolStr>,
 }
@@ -139,7 +143,12 @@ fn main() -> anyhow::Result<()> {
 
     let venv = prepare_venv(&opts).context("Failed preparing virtual environment")?;
 
-    let mut cmd = std::process::Command::new(venv.path().join("bin/python"));
+    let program = venv
+        .path()
+        .join("bin")
+        .join(opts.exec_cmd.as_deref().unwrap_or("python"));
+
+    let mut cmd = std::process::Command::new(program);
 
     if opts.ipython {
         cmd.args(["-m", "IPython"]);
