@@ -66,7 +66,7 @@ fn assemble_requirements(opts: &Opts) -> anyhow::Result<Requirements> {
         reqs.add("notebook");
     }
 
-    if let Some(filename) = opts.cmd.first() {
+    if let (None, Some(filename)) = (&opts.exec_cmd, opts.cmd.first()) {
         if let Ok(file) = std::fs::File::open(filename.as_str()) {
             reqs.parse_and_append(file)?;
         }
