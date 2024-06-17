@@ -5,7 +5,7 @@ homepage = "https://github.com/vmalloc/spyn"
 license = "MIT"
 name = "spyn"
 repository = "https://github.com/vmalloc/spyn"
-version = "0.6.0"
+version = "0.7.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
